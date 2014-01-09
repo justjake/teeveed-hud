@@ -1,0 +1,39 @@
+/* CSS styles for Hud */
+
+/* the borderpane layout that's the root of the scene */
+#main {
+    -fx-background-color: #111;
+}
+
+/* Text styles */
+.action, .result {
+    -fx-fill: #fff;
+}
+
+.body {
+    -fx-fill: #ccc;
+}
+
+/*.user-input {*/
+    /*-fx-font-size: 75;*/
+/*}*/
+
+.entity {
+    -fx-fill: #fff;
+                           /* type, color, radius, spread, x, y */
+    -fx-effect: dropshadow(gaussian, #999, 30, 0.1, 0, 0);
+}
+
+
+/* styling for our FlowPanes */
+.small {
+    -fx-font-size: 40;
+    -fx-hgap: 20; /* 40/2 */
+    -fx-vgap: 8; /* 40/5 */
+}
+
+.large {
+    -fx-font-size: 75;
+    -fx-hgap: 37.5; /* 75/2 */
+    -fx-vgap: 15; /* 75.5 */
+}
