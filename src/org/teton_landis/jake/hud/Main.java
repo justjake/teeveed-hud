@@ -3,17 +3,11 @@ package org.teton_landis.jake.hud;
 import javafx.animation.FadeTransition;
 import javafx.application.Application;
 import javafx.event.EventHandler;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.*;
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
-import javafx.scene.shape.*;
-import javafx.scene.paint.*;
-import javafx.scene.text.*;
-import javafx.scene.web.*;
 import javafx.stage.Stage;
 import javafx.stage.*;
 import javafx.util.Duration;
@@ -27,17 +21,6 @@ public class Main extends Application {
 
     private static class Delta { double x, y; }
 
-    private Text textWithStyle(String text, String... styles) {
-        Text t = new Text(text);
-        t.getStyleClass().addAll(styles);
-        return t;
-    }
-
-    private <T extends Node> T nodeWithStyle(Class<T> type, String... styles) throws IllegalAccessException, InstantiationException {
-        T thing = type.newInstance();
-        thing.getStyleClass().addAll(styles);
-        return thing;
-    }
 
     /**
      * Make a whole stage draggable by a node. Useful for moving an undecorated
@@ -145,39 +128,3 @@ public class Main extends Application {
         launch(args);
     }
 }
-
-class Browser extends Region {
-
-    final WebView browser = new WebView();
-    final WebEngine webEngine = browser.getEngine();
-
-    public Browser() {
-        //apply the styles
-        getStyleClass().add("browser");
-        // load the web page
-        webEngine.load("http://jake.teton-landis.org");
-        //add the web view to the scene
-        getChildren().add(browser);
-
-    }
-    private Node createSpacer() {
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        return spacer;
-    }
-
-    @Override protected void layoutChildren() {
-        double w = getWidth();
-        double h = getHeight();
-        layoutInArea(browser,0,0,w,h,0, HPos.CENTER, VPos.CENTER);
-    }
-
-    @Override protected double computePrefWidth(double height) {
-        return 750;
-    }
-
-    @Override protected double computePrefHeight(double width) {
-        return 500;
-    }
-}
-

@@ -22,11 +22,6 @@ public class StyledTextFlow extends FlowPane {
 
     // maybe add a Texts property here so we can swap em out or change styling?
 
-    // whyyyy is this required for StyledTextFlow.class.newInstance to not blow up
-    public StyledTextFlow() {
-        super();
-    }
-
     /**
      * Shortcut initializer that immediately calls AddTextWithStyles on the parameters
      * @param content_and_styles see addTextWithStyles
