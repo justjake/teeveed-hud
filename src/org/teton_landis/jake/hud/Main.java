@@ -19,7 +19,7 @@ public class Main extends Application {
     static final double fontSize = 70;
     static final double totalWidth = 1200;
     static final double sixteenNine = (9.0 / 16.0);
-    static final String[] copy = {"Ok tv. play", "Breaking Bad", "season", "two",
+    static final String[] Copy = {"Ok tv. play", "Breaking Bad", "season", "two",
             "episode", "four", "please."};
 
     private Text textWithStyle(String text, String... styles) {
@@ -34,6 +34,15 @@ public class Main extends Application {
         return thing;
     }
 
+    /**
+     * what the fuck am i doing java?
+     * not typing "new String[] { ... }" every time i want an array, that's what
+     * #drunkCoding
+     * @param derp some strings in a raw array
+     * @return derp
+     */
+    private String[] str(String... derp) { return derp; }
+
     @Override
     public void start(Stage primaryStage) throws Exception{
 //        Parent root = FXMLLoader.load(getClass().getResource("sample.fxml"));
@@ -41,29 +50,37 @@ public class Main extends Application {
 //        primaryStage.setScene(new Scene(root, 300, 275));
 //        primaryStage.show();
 
+        // stage setup
         primaryStage.setTitle("HUD");
         primaryStage.initStyle(StageStyle.TRANSPARENT);
 
-        Text[] texts = new Text[copy.length];
-        for (int i=0; i<copy.length; i++) {
-            Text t = textWithStyle(copy[i], "body", "user-input");
-            if (i%2 != 0) {
-                t.getStyleClass().add("entity");
-            }
-            texts[i] = t;
-        }
 
-        FlowPane user_text = nodeWithStyle(FlowPane.class, "large");
-        user_text.getChildren().addAll(texts);
+        // main body contents -- what the user put into the webui system
+        StyledTextFlow user_text = new StyledTextFlow(
+                str("Ok tv. Play"),
+                str("Breaking Bad", "entity"),
+                str("season"),
+                str("two", "entity"),
+                str("episode"),
+                str("four", "entity"),
+                str("please")
+        );
+        user_text.getStyleClass().addAll("large");
 
-        FlowPane intentIdentified = nodeWithStyle(FlowPane.class, "small");
-        intentIdentified.getChildren().addAll(
-                textWithStyle("♦ Intent →", "body"), textWithStyle("play episode", "action"));
-        
-        FlowPane result = new FlowPane();
-        result.getStyleClass().add("small");
-        result.getChildren().addAll(textWithStyle("found", "body"),
-                textWithStyle("Breaking Bad - S02E04 - Thirty-Eight Snub", "result", "entity"));
+        // top -- intent identified
+        StyledTextFlow intentIdentified = new StyledTextFlow(
+                str("♦ Intent:"),
+                str("query episode → play" , "action")
+        );
+        intentIdentified.getStyleClass().addAll("small", "action");
+
+
+        // bottom -- result
+        StyledTextFlow result = new StyledTextFlow(
+                str("found"),
+                str("Breaking Bad - S02E04 - Thirty-Eight Snub", "entity")
+        );
+        result.getStyleClass().addAll("small", "result");
 
         VBox vbox = new VBox();
         vbox.getChildren().addAll(intentIdentified, user_text, result);
