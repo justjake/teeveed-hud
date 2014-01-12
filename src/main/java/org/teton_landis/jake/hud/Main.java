@@ -2,6 +2,7 @@ package org.teton_landis.jake.hud;
 
 import javafx.animation.FadeTransition;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.*;
@@ -21,6 +22,8 @@ public class Main extends Application {
     static final double totalWidth = 1200;
     static final double sixteenNine = (9.0 / 16.0);
     static final Duration FadeTime = Duration.millis(1300);
+
+    static public Main instance; // tricky global state !!!!
 
     public boolean hudIsOnScreen;
     public Stage mainStage;
@@ -165,6 +168,7 @@ public class Main extends Application {
         // initial setup
         mainStage = primaryStage;
         final Main app = this; // for callbacks
+        instance = app;
 
         // create root
         root = new StackPane();
@@ -223,6 +227,7 @@ public class Main extends Application {
     }
 
     public static void main(String[] args) {
+        Platform.setImplicitExit(false);
         launch(args);
     }
 }
