@@ -1,11 +1,14 @@
 package org.teton_landis.jake.hud;
 
+import javafx.animation.FadeTransition;
 import javafx.application.Application;
+import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.*;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.shape.*;
 import javafx.scene.paint.*;
@@ -13,14 +16,16 @@ import javafx.scene.text.*;
 import javafx.scene.web.*;
 import javafx.stage.Stage;
 import javafx.stage.*;
+import javafx.util.Duration;
 
 public class Main extends Application {
 
     static final double fontSize = 70;
     static final double totalWidth = 1200;
     static final double sixteenNine = (9.0 / 16.0);
-    static final String[] Copy = {"Ok tv. play", "Breaking Bad", "season", "two",
-            "episode", "four", "please."};
+    static final Duration FadeTime = Duration.millis(300);
+
+    private static class Delta { double x, y; }
 
     private Text textWithStyle(String text, String... styles) {
         Text t = new Text(text);
@@ -35,6 +40,30 @@ public class Main extends Application {
     }
 
     /**
+     * Make a whole stage draggable by a node. Useful for moving an undecorated
+     * window around.
+     * https://stackoverflow.com/questions/11780115/moving-an-undecorated-stage-in-javafx-2
+     * @param stage to be made draggable
+     * @param node drag handle
+     */
+    static private void dragStageByNode(final Stage stage, Node node) {
+        final Delta dragDelta = new Delta();
+        node.setOnMousePressed(new EventHandler<MouseEvent>() {
+            @Override public void handle(MouseEvent mouseEvent) {
+                // record a delta distance for the drag and drop operation.
+                dragDelta.x = stage.getX() - mouseEvent.getScreenX();
+                dragDelta.y = stage.getY() - mouseEvent.getScreenY();
+            }
+        });
+        node.setOnMouseDragged(new EventHandler<MouseEvent>() {
+            @Override public void handle(MouseEvent mouseEvent) {
+                stage.setX(mouseEvent.getScreenX() + dragDelta.x);
+                stage.setY(mouseEvent.getScreenY() + dragDelta.y);
+            }
+        });
+    }
+
+    /**
      * what the fuck am i doing java?
      * not typing "new String[] { ... }" every time i want an array, that's what
      * #drunkCoding
@@ -44,16 +73,14 @@ public class Main extends Application {
     private String[] str(String... derp) { return derp; }
 
     @Override
-    public void start(Stage primaryStage) throws Exception{
-//        Parent root = FXMLLoader.load(getClass().getResource("sample.fxml"));
-//        primaryStage.setTitle("Media Hud");
-//        primaryStage.setScene(new Scene(root, 300, 275));
-//        primaryStage.show();
-
-        // stage setup
-        primaryStage.setTitle("HUD");
-        primaryStage.initStyle(StageStyle.TRANSPARENT);
-
+    public void start(final Stage primaryStage) throws Exception{
+        // first off - mock content creation
+        // top -- intent identified
+        StyledTextFlow intentIdentified = new StyledTextFlow(
+                str("♦ Intent:"),
+                str("query episode → play" , "action")
+        );
+        intentIdentified.getStyleClass().addAll("small", "action");
 
         // main body contents -- what the user put into the webui system
         StyledTextFlow user_text = new StyledTextFlow(
@@ -67,14 +94,6 @@ public class Main extends Application {
         );
         user_text.getStyleClass().addAll("large");
 
-        // top -- intent identified
-        StyledTextFlow intentIdentified = new StyledTextFlow(
-                str("♦ Intent:"),
-                str("query episode → play" , "action")
-        );
-        intentIdentified.getStyleClass().addAll("small", "action");
-
-
         // bottom -- result
         StyledTextFlow result = new StyledTextFlow(
                 str("found"),
@@ -82,25 +101,44 @@ public class Main extends Application {
         );
         result.getStyleClass().addAll("small", "result");
 
+
+
+        // set up vertical sections
         VBox vbox = new VBox();
         vbox.getChildren().addAll(intentIdentified, user_text, result);
         VBox.setMargin(user_text, new Insets(fontSize / 2, 0, fontSize / 2, 0));
 
+        // one additional layout wrapper
+        // maybe so we can fade the whole thing in?
         StackPane pane = new StackPane();
         pane.getChildren().add(vbox);
         pane.setId("main");
 
-        StackPane.setAlignment(vbox, Pos.CENTER);
+        // center all our texts together in the window
         StackPane.setMargin(vbox, new Insets(fontSize / 2, fontSize, fontSize / 2, fontSize));
+        StackPane.setAlignment(vbox, Pos.CENTER);
 
+        // drag window from anywhere
+        dragStageByNode(primaryStage, pane);
+
+        // fade in animation - looks gross on Linux, may be suffering from a lack of compositing
+        pane.setOpacity(0.0);
+        FadeTransition hud_in = new FadeTransition(FadeTime, pane);
+        hud_in.setFromValue(0.0);
+        hud_in.setToValue(1.0);
+
+        // scene setup
         Scene scene = new Scene(pane, totalWidth, totalWidth*sixteenNine);
         scene.getStylesheets().addAll(this.getClass().getResource("style.css").toExternalForm());
-        scene.setFill(null);
+        scene.setFill(null); // transparent
 
-        // Scene scene = new Scene(new Browser(), 750, 500, Color.web("#222"));
+        // stage setup
+        primaryStage.setTitle("HUD");
+        primaryStage.initStyle(StageStyle.TRANSPARENT);
         primaryStage.setScene(scene);
         primaryStage.show();
 
+        hud_in.play();
     }
 
     public static void main(String[] args) {
