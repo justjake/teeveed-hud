@@ -1,8 +1,13 @@
 /* CSS styles for Hud */
 
-/* the borderpane layout that's the root of the scene */
-#main {
+/* the StackPane layout that's the root of the scene */
+#root {
     -fx-background-color: #111;
+}
+
+/* VBox full of text for the user to look at */
+#alerts {
+    -fx-spacing: 40;
 }
 
 Text {
@@ -35,5 +40,5 @@ Text {
 .large {
     -fx-font-size: 75;
     -fx-hgap: 30; /* roughly 75/2 */
-    -fx-vgap: 15; /* 75.5 */
+    -fx-vgap: 0; /* 75.5 */
 }

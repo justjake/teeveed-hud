@@ -2,10 +2,13 @@ package org.teton_landis.jake.hud;
 
 import javafx.animation.FadeTransition;
 import javafx.application.Application;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.*;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
@@ -17,10 +20,28 @@ public class Main extends Application {
     static final double fontSize = 70;
     static final double totalWidth = 1200;
     static final double sixteenNine = (9.0 / 16.0);
-    static final Duration FadeTime = Duration.millis(300);
+    static final Duration FadeTime = Duration.millis(1300);
+
+    public boolean hudIsOnScreen;
+    public Stage mainStage;
+    public Pane root;
+    public VBox alerts;
+
+    // transitions applied to the Root to show and hide everything
+    // I'm just going for an opacity fade for now
+    private FadeTransition show_transition;
+    private FadeTransition hide_transition;
 
     private static class Delta { double x, y; }
 
+    /**
+     * what the fuck am i doing java?
+     * not typing "new String[] { ... }" every time i want an array, that's what
+     * #drunkCoding
+     * @param derp some strings in a raw array
+     * @return derp
+     */
+    static private String[] str(String... derp) { return derp; }
 
     /**
      * Make a whole stage draggable by a node. Useful for moving an undecorated
@@ -32,7 +53,8 @@ public class Main extends Application {
     static private void dragStageByNode(final Stage stage, Node node) {
         final Delta dragDelta = new Delta();
         node.setOnMousePressed(new EventHandler<MouseEvent>() {
-            @Override public void handle(MouseEvent mouseEvent) {
+            @Override
+            public void handle(MouseEvent mouseEvent) {
                 // record a delta distance for the drag and drop operation.
                 dragDelta.x = stage.getX() - mouseEvent.getScreenX();
                 dragDelta.y = stage.getY() - mouseEvent.getScreenY();
@@ -47,26 +69,76 @@ public class Main extends Application {
     }
 
     /**
-     * what the fuck am i doing java?
-     * not typing "new String[] { ... }" every time i want an array, that's what
-     * #drunkCoding
-     * @param derp some strings in a raw array
-     * @return derp
+     * Show the heads-up display (fade in)
      */
-    private String[] str(String... derp) { return derp; }
+    public void showHud() {
+        // do nothing if already open
+        if (hudIsOnScreen) return;
 
-    @Override
-    public void start(final Stage primaryStage) throws Exception{
-        // first off - mock content creation
-        // top -- intent identified
-        StyledTextFlow intentIdentified = new StyledTextFlow(
-                str("♦ Intent:"),
+        hudIsOnScreen = true;
+        hide_transition.stop();
+
+        // getOpacity so we look good interrupting a Hide.
+        // note that the opacity must be set to 0.0 in the constructor
+        show_transition.setFromValue(root.getOpacity());
+
+        mainStage.show();
+        show_transition.play();
+    }
+
+    /**
+     * Hide the heads-up display (fade out)
+     */
+    public void hideHud() {
+        // do nothing if already hidden
+        if (! hudIsOnScreen) return;
+
+        hudIsOnScreen = false;
+        show_transition.stop();
+
+        hide_transition.setFromValue(root.getOpacity());
+        hide_transition.play();
+        // mainStage.hide(); // handled by an event handler configured in start()
+
+    }
+
+    /**
+     * remove all text from the HUD
+     */
+    public void clearAlerts() {
+        alerts.getChildren().removeAll(alerts.getChildren());
+    }
+
+    /**
+     * Create a new StyledTextFlow layout with its own style classes applied,
+     * and fill that layout with Text nodes as seen in StyledTextFlow#addTextWithStyles
+     *
+     * meat and potatoes of the ruby interface. hope this works :|
+     * @param style_classes classes to be applied to the parent text node
+     * @param content_and_styles Each String[] like
+     *                           String[]{"some text content", "class1", ..., "classN"}
+     */
+    public StyledTextFlow pushAlert(String[] style_classes, String[]... content_and_styles) {
+        StyledTextFlow flow = new StyledTextFlow(content_and_styles);
+        flow.getStyleClass().addAll(style_classes);
+
+        alerts.getChildren().add(flow);
+
+        return flow;
+    }
+
+    /**
+     * creates a few example alerts for the hypothetical user query,
+     * "Ok tv. Play Breaking Bad season two episode four please"
+     */
+    public void pushExamples() {
+        pushAlert(str("small", "action"), // classes
+                str("♦ Intent:"),         // content
                 str("query episode → play" , "action")
         );
-        intentIdentified.getStyleClass().addAll("small", "action");
 
         // main body contents -- what the user put into the webui system
-        StyledTextFlow user_text = new StyledTextFlow(
+        pushAlert(str("large"),
                 str("Ok tv. Play"),
                 str("Breaking Bad", "entity"),
                 str("season"),
@@ -75,53 +147,79 @@ public class Main extends Application {
                 str("four", "entity"),
                 str("please")
         );
-        user_text.getStyleClass().addAll("large");
 
         // bottom -- result
-        StyledTextFlow result = new StyledTextFlow(
+        pushAlert(str("small", "result"),
                 str("found"),
                 str("Breaking Bad - S02E04 - Thirty-Eight Snub", "entity")
         );
-        result.getStyleClass().addAll("small", "result");
+
+        pushAlert(str("small"), str("playing with VLC."));
+
+    }
 
 
+    @Override
+    public void start(final Stage primaryStage) throws Exception{
 
-        // set up vertical sections
-        VBox vbox = new VBox();
-        vbox.getChildren().addAll(intentIdentified, user_text, result);
-        VBox.setMargin(user_text, new Insets(fontSize / 2, 0, fontSize / 2, 0));
+        // initial setup
+        mainStage = primaryStage;
+        final Main app = this; // for callbacks
 
-        // one additional layout wrapper
-        // maybe so we can fade the whole thing in?
-        StackPane pane = new StackPane();
-        pane.getChildren().add(vbox);
-        pane.setId("main");
-
-        // center all our texts together in the window
-        StackPane.setMargin(vbox, new Insets(fontSize / 2, fontSize, fontSize / 2, fontSize));
-        StackPane.setAlignment(vbox, Pos.CENTER);
-
+        // create root
+        root = new StackPane();
+        root.setOpacity(0.0); // required for nice fade-in
+        root.setId("root");
         // drag window from anywhere
-        dragStageByNode(primaryStage, pane);
+        dragStageByNode(primaryStage, root);
 
-        // fade in animation - looks gross on Linux, may be suffering from a lack of compositing
-        pane.setOpacity(0.0);
-        FadeTransition hud_in = new FadeTransition(FadeTime, pane);
-        hud_in.setFromValue(0.0);
-        hud_in.setToValue(1.0);
+
+        // create "alerts" vbox and add it to the root
+        alerts = new VBox();
+        alerts.setId("alerts");
+        root.getChildren().add(alerts);
+        StackPane.setMargin(alerts, new Insets(fontSize / 2, fontSize, fontSize / 2, fontSize));
+        StackPane.setAlignment(alerts, Pos.TOP_CENTER);
+
+        // set up transitions
+        show_transition = new FadeTransition(FadeTime, root);
+        show_transition.setFromValue(0.0);
+        show_transition.setToValue(1.0);
+
+        hide_transition = new FadeTransition(FadeTime, root);
+        hide_transition.setFromValue(1.0);
+        hide_transition.setToValue(0.0);
+
+        hide_transition.setOnFinished(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                app.mainStage.hide();
+            }
+        });
 
         // scene setup
-        Scene scene = new Scene(pane, totalWidth, totalWidth*sixteenNine);
-        scene.getStylesheets().addAll(this.getClass().getResource("style.css").toExternalForm());
+        Scene scene = new Scene(root, totalWidth, totalWidth*sixteenNine);
+        scene.getStylesheets().addAll(this.getClass().getResource("/style.css").toExternalForm());
         scene.setFill(null); // transparent
+
+        // hide HUD on ESCAPE
+        scene.setOnKeyReleased(new EventHandler<KeyEvent>() {
+            @Override
+            public void handle(KeyEvent keyEvent) {
+                if (keyEvent.getCode() == KeyCode.ESCAPE) {
+                    app.hideHud();
+                }
+            }
+        });
 
         // stage setup
         primaryStage.setTitle("HUD");
         primaryStage.initStyle(StageStyle.TRANSPARENT);
         primaryStage.setScene(scene);
-        primaryStage.show();
 
-        hud_in.play();
+        // for now......
+        pushExamples();
+        showHud();
     }
 
     public static void main(String[] args) {
